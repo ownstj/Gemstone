@@ -45,12 +45,21 @@ data class SessionResponse(
 
 
 class ChatWebSocketClient(
-    private val serverUrl: String = defaultServerHost
+    private var serverUrl: String = defaultServerHost
 ) {
-    private val httpClient = HttpClientFactory.create()
+    private var httpClient = HttpClientFactory.create()
 
     init {
         println("INFO: ChatWebSocketClient initialized using server URL - $serverUrl")
+    }
+
+    fun updateHost(newHost: String) {
+        if (newHost != serverUrl) {
+            serverUrl = newHost
+            httpClient.close()
+            httpClient = HttpClientFactory.create()
+            println("INFO: ChatWebSocketClient host updated to $newHost")
+        }
     }
 
     private val json = Json {

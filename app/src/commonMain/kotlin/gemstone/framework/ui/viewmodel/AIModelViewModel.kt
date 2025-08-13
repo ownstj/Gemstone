@@ -3,6 +3,7 @@ package gemstone.framework.ui.viewmodel
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import gemstone.framework.network.http.defaultServerHost
 import gemstone.framework.network.websocket.ChatWebSocketClient
 
 
@@ -10,6 +11,15 @@ val webSocketClient = ChatWebSocketClient()
 
 
 object AIModelViewModel {
+    var isEditingServerHost by mutableStateOf(false)
+    var serverHost by mutableStateOf(defaultServerHost)
+        private set
+
+    fun changeServerHost(newHost: String) {
+        serverHost = newHost
+        webSocketClient.updateHost(newHost)
+    }
+
     var defaultAIModel by mutableStateOf("Qwen3")
     var defaultAIModelDescription by mutableStateOf("Qwen3 14B 4bitQ IT")
 

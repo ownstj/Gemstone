@@ -4,12 +4,25 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.shape.CornerSize
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import gemstone.framework.ui.compose.theme.*
@@ -83,12 +96,46 @@ fun SideScreen(
         ) {
             SubtitleText(stringResource(Res.string.sidebar_models_section))
             SecondaryFluxIconButton(
-                onClick = {},
+                onClick = { AIModelViewModel.isEditingServerHost = !AIModelViewModel.isEditingServerHost },
                 iconResource = IconResource.Drawable(Res.drawable.sliders),
                 iconDescription = stringResource(Res.string.sidebar_models_section_desc),
                 elevation = ButtonDefaults.elevatedButtonElevation(0.4.dp),
                 shape = MaterialTheme.shapes.medium.copy(CornerSize(14.dp)),
                 modifier = Modifier,
+            )
+        }
+
+        if (AIModelViewModel.isEditingServerHost) {
+            var newHost by remember { mutableStateOf(AIModelViewModel.serverHost) }
+            OutlinedTextField(
+                value = newHost,
+                onValueChange = { newHost = it },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = Dimen.LAYOUT_PADDING)
+                    .onKeyEvent {
+                        if (it.key == Key.Enter) {
+                            AIModelViewModel.changeServerHost(newHost)
+                            AIModelViewModel.isEditingServerHost = false
+                            true
+                        } else {
+                            false
+                        }
+                    },
+                label = { BodyText("Server Host") },
+                singleLine = true,
+                keyboardOptions = KeyboardOptions.Default.copy(imeAction = ImeAction.Done),
+                keyboardActions = KeyboardActions(onDone = {
+                    AIModelViewModel.changeServerHost(newHost)
+                    AIModelViewModel.isEditingServerHost = false
+                }),
+                colors = TextFieldDefaults.colors(
+                    focusedContainerColor = Color.Transparent,
+                    unfocusedContainerColor = Color.Transparent,
+                    disabledContainerColor = Color.Transparent,
+                    focusedIndicatorColor = MaterialTheme.colorScheme.primary,
+                    unfocusedIndicatorColor = MaterialTheme.colorScheme.secondary,
+                )
             )
         }
 
