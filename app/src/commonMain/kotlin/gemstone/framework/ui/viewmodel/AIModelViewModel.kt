@@ -16,8 +16,33 @@ object AIModelViewModel {
         private set
 
     fun changeServerHost(newHost: String) {
-        serverHost = newHost
-        webSocketClient.updateHost(newHost)
+        val host = newHost.trim()
+        if (host.isBlank()) return
+        // Show the current applied server address under New Chat
+        selectedAIModelDescription = host
+
+        val isSame = host == serverHost
+        if (!isSame) {
+            // Clean up existing session on the old server and switch host
+            ChatViewModel.runBlocking {
+                webSocketClient.deleteSession()
+            }
+            serverHost = host
+            webSocketClient.updateHost(host)
+        }
+
+        // Ensure model state and session are consistent on the new server
+        if (selectedAIModel.isNotEmpty()) {
+            // Switch to ALL (default) if a specific model was selected
+            deselectAIModel() // This will initialize a default session
+            // Keep the description as server address for visibility
+            selectedAIModelDescription = host
+        } else if (!isSame) {
+            // Already ALL; create a default session on the new server
+            ChatViewModel.runBlocking {
+                initializeModel(webSocketClient)
+            }
+        }
     }
 
     var defaultAIModel by mutableStateOf("Qwen3")

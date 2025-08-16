@@ -9,9 +9,7 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -131,7 +129,14 @@ fun SideScreen(
                         onValueChange = { newHost = it },
                         modifier = Modifier
                             .weight(1f)
-                            .padding(vertical = 6.dp),
+                            .padding(vertical = 6.dp)
+                            .onKeyEvent {
+                                if (it.key == Key.Enter || it.key == Key.NumPadEnter) {
+                                    AIModelViewModel.changeServerHost(newHost)
+                                    AIModelViewModel.isEditingServerHost = false
+                                    true
+                                } else false
+                            },
                         singleLine = true,
                         textStyle = TextStyle(
                             color = MaterialTheme.colorScheme.onSecondary,
