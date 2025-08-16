@@ -4,11 +4,13 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.shape.CornerSize
+import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Text
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -21,6 +23,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onKeyEvent
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
@@ -107,36 +110,57 @@ fun SideScreen(
 
         if (AIModelViewModel.isEditingServerHost) {
             var newHost by remember { mutableStateOf(AIModelViewModel.serverHost) }
-            OutlinedTextField(
-                value = newHost,
-                onValueChange = { newHost = it },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = Dimen.LAYOUT_PADDING)
-                    .onKeyEvent {
-                        if (it.key == Key.Enter) {
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(horizontal = Dimen.LAYOUT_PADDING),
+                horizontalArrangement = Arrangement.spacedBy(Dimen.LIST_ELEMENT_SPACING),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                SecondaryFluxButton(
+                    onClick = {},
+                    modifier = Modifier.weight(1f),
+                    elevation = ButtonDefaults.buttonElevation(0.4.dp),
+                    clickAnimation = Dimen.SURFACE_CLICK_ANIMATION,
+                    hoverAnimation = null,
+                    interactionSource = remember { NoRippleInteractionSource() },
+                    enabled = false,
+                    shape = MaterialTheme.shapes.extraLarge,
+                    contentPadding = PaddingValues(horizontal = 12.dp)
+                ) {
+                    BasicTextField(
+                        value = newHost,
+                        onValueChange = { newHost = it },
+                        modifier = Modifier.weight(1f).padding(vertical = 6.dp),
+                        textStyle = TextStyle(
+                            color = MaterialTheme.colorScheme.onSecondary,
+                            fontFamily = SuiteFontFamily
+                        ),
+                        keyboardActions = KeyboardActions(onDone = {
                             AIModelViewModel.changeServerHost(newHost)
                             AIModelViewModel.isEditingServerHost = false
-                            true
-                        } else {
-                            false
+                        }),
+                        decorationBox = { innerTextField ->
+                            if (newHost.isEmpty()) {
+                                Text(
+                                    text = "Enter server address",
+                                    style = TextStyle(color = Color.Gray),
+                                    fontFamily = SuiteFontFamily
+                                )
+                            }
+                            innerTextField()
                         }
+                    )
+                }
+                PrimaryFluxIconButton(
+                    onClick = {
+                        AIModelViewModel.changeServerHost(newHost)
+                        AIModelViewModel.isEditingServerHost = false
                     },
-                label = { BodyText("Server Host") },
-                singleLine = true,
-                keyboardOptions = KeyboardOptions.Default.copy(imeAction = ImeAction.Done),
-                keyboardActions = KeyboardActions(onDone = {
-                    AIModelViewModel.changeServerHost(newHost)
-                    AIModelViewModel.isEditingServerHost = false
-                }),
-                colors = TextFieldDefaults.colors(
-                    focusedContainerColor = Color.Transparent,
-                    unfocusedContainerColor = Color.Transparent,
-                    disabledContainerColor = Color.Transparent,
-                    focusedIndicatorColor = MaterialTheme.colorScheme.primary,
-                    unfocusedIndicatorColor = MaterialTheme.colorScheme.secondary,
+                    iconResource = IconResource.Drawable(Res.drawable.arrow_up),
+                    iconDescription = "Save",
+                    shape = MaterialTheme.shapes.extraLarge,
+                    modifier = Modifier.size(44.dp)
                 )
-            )
+            }
         }
 
         LazyRow(
