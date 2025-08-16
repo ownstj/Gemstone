@@ -129,11 +129,15 @@ fun SideScreen(
                     BasicTextField(
                         value = newHost,
                         onValueChange = { newHost = it },
-                        modifier = Modifier.weight(1f).padding(vertical = 6.dp),
+                        modifier = Modifier
+                            .weight(1f)
+                            .padding(vertical = 6.dp),
+                        singleLine = true,
                         textStyle = TextStyle(
                             color = MaterialTheme.colorScheme.onSecondary,
                             fontFamily = SuiteFontFamily
                         ),
+                        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
                         keyboardActions = KeyboardActions(onDone = {
                             AIModelViewModel.changeServerHost(newHost)
                             AIModelViewModel.isEditingServerHost = false
