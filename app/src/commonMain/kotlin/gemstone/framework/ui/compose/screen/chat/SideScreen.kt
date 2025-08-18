@@ -32,6 +32,7 @@ import gemstone.app.generated.resources.bell
 import gemstone.app.generated.resources.search
 import gemstone.app.generated.resources.sliders
 import gemstone.framework.ui.viewmodel.AIModelViewModel
+import gemstone.framework.ui.viewmodel.AIModelViewModel.InputKind
 import gemstone.framework.ui.viewmodel.SettingsViewModel
 import org.jetbrains.compose.resources.stringResource
 import androidx.compose.foundation.background
@@ -237,6 +238,8 @@ private fun ServerModelPopup(onDismiss: () -> Unit) {
                 modifier = Modifier.fillMaxWidth().padding(horizontal = Dimen.LAYOUT_PADDING).align(Alignment.Center)
             ) {
                 var newHost by remember { mutableStateOf(AIModelViewModel.serverHost) }
+                var apiMode by remember { mutableStateOf(false) } // false: SERVER, true: API KEY
+                var apiKey by remember { mutableStateOf("") }
 
                 BlurredFluxButton(
                     onClick = {},
@@ -254,66 +257,154 @@ private fun ServerModelPopup(onDismiss: () -> Unit) {
                         modifier = Modifier.fillMaxWidth(),
                         verticalArrangement = Arrangement.spacedBy(Dimen.LIST_ELEMENT_SPACING)
                     ) {
-                        TitleText("서버 설정", fontSize = 20.sp)
+                        TitleText("서버/API 설정", fontSize = 20.sp)
 
-                        SecondaryFluxButton(
-                            onClick = {},
+                        // Toggle + input row
+                        Row(
                             modifier = Modifier.fillMaxWidth(),
-                            elevation = ButtonDefaults.buttonElevation(0.4.dp),
-                            clickAnimation = Dimen.SURFACE_CLICK_ANIMATION,
-                            hoverAnimation = null,
-                            interactionSource = remember { NoRippleInteractionSource() },
-                            enabled = false,
-                            shape = MaterialTheme.shapes.extraLarge,
-                            contentPadding = PaddingValues(horizontal = 12.dp)
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
-                            BasicTextField(
-                                value = newHost,
-                                onValueChange = { newHost = it },
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .padding(vertical = 6.dp)
-                                    .onKeyEvent {
-                                        if (it.key == Key.Enter || it.key == Key.NumPadEnter) {
-                                            if (newHost.isNotBlank()) AIModelViewModel.changeServerHost(newHost)
-                                            onDismiss()
-                                            true
-                                        } else false
-                                    },
-                                singleLine = true,
-                                textStyle = TextStyle(
-                                    color = MaterialTheme.colorScheme.onSecondary,
-                                    fontFamily = SuiteFontFamily
-                                ),
-                                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
-                                decorationBox = { innerTextField ->
-                                    if (newHost.isEmpty()) {
-                                        Text(
-                                            text = "Enter server address",
-                                            style = TextStyle(color = Color.Gray),
+                            val chipPad = PaddingValues(horizontal = 12.dp, vertical = 6.dp)
+                            // SERVER chip
+                            if (!apiMode) {
+                                PrimaryFluxButton(
+                                    onClick = { apiMode = false },
+                                    shape = MaterialTheme.shapes.extraLarge,
+                                    contentPadding = chipPad
+                                ) { BodyText("SERVER", fontSize = 12.sp) }
+                            } else {
+                                BlurredFluxButton(
+                                    onClick = { apiMode = false },
+                                    shape = MaterialTheme.shapes.extraLarge,
+                                    contentPadding = chipPad
+                                ) { CaptionText("SERVER", fontSize = 12.sp) }
+                            }
+                            // API KEY chip
+                            if (apiMode) {
+                                PrimaryFluxButton(
+                                    onClick = { apiMode = true },
+                                    shape = MaterialTheme.shapes.extraLarge,
+                                    contentPadding = chipPad
+                                ) { BodyText("API KEY", fontSize = 12.sp) }
+                            } else {
+                                BlurredFluxButton(
+                                    onClick = { apiMode = true },
+                                    shape = MaterialTheme.shapes.extraLarge,
+                                    contentPadding = chipPad
+                                ) { CaptionText("API KEY", fontSize = 12.sp) }
+                            }
+
+                            // Input field
+                            SecondaryFluxButton(
+                                onClick = {},
+                                modifier = Modifier.weight(1f),
+                                elevation = ButtonDefaults.buttonElevation(0.4.dp),
+                                clickAnimation = Dimen.SURFACE_CLICK_ANIMATION,
+                                hoverAnimation = null,
+                                interactionSource = remember { NoRippleInteractionSource() },
+                                enabled = false,
+                                shape = MaterialTheme.shapes.extraLarge,
+                                contentPadding = PaddingValues(horizontal = 12.dp)
+                            ) {
+                                if (!apiMode) {
+                                    BasicTextField(
+                                        value = newHost,
+                                        onValueChange = { newHost = it },
+                                        modifier = Modifier
+                                            .weight(1f)
+                                            .padding(vertical = 6.dp)
+                                            .onKeyEvent {
+                                                if (it.key == Key.Enter || it.key == Key.NumPadEnter) {
+                                                    if (newHost.isNotBlank()) AIModelViewModel.changeServerHost(newHost)
+                                                    onDismiss()
+                                                    true
+                                                } else false
+                                            },
+                                        singleLine = true,
+                                        textStyle = TextStyle(
+                                            color = MaterialTheme.colorScheme.onSecondary,
                                             fontFamily = SuiteFontFamily
-                                        )
-                                    }
-                                    innerTextField()
+                                        ),
+                                        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                                        decorationBox = { inner ->
+                                            if (newHost.isEmpty()) {
+                                                Text(
+                                                    text = "Enter server address",
+                                                    style = TextStyle(color = Color.Gray),
+                                                    fontFamily = SuiteFontFamily
+                                                )
+                                            }
+                                            inner()
+                                        }
+                                    )
+                                } else {
+                                    BasicTextField(
+                                        value = apiKey,
+                                        onValueChange = { apiKey = it },
+                                        modifier = Modifier
+                                            .weight(1f)
+                                            .padding(vertical = 6.dp)
+                                            .onKeyEvent {
+                                                if (it.key == Key.Enter || it.key == Key.NumPadEnter) {
+                                                    if (apiKey.isNotBlank()) AIModelViewModel.addRecentApiKey(apiKey)
+                                                    onDismiss()
+                                                    true
+                                                } else false
+                                            },
+                                        singleLine = true,
+                                        textStyle = TextStyle(
+                                            color = MaterialTheme.colorScheme.onSecondary,
+                                            fontFamily = SuiteFontFamily
+                                        ),
+                                        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                                        decorationBox = { inner ->
+                                            if (apiKey.isEmpty()) {
+                                                Text(
+                                                    text = "Enter API key",
+                                                    style = TextStyle(color = Color.Gray),
+                                                    fontFamily = SuiteFontFamily
+                                                )
+                                            }
+                                            inner()
+                                        }
+                                    )
                                 }
-                            )
+                            }
                         }
 
+                        // Recent inputs (SERVER and API KEY mixed)
                         Column {
-                            CaptionText("최근 서버 주소", color = Color.Gray)
+                            CaptionText("최근 입력", color = Color.Gray)
                             Spacer(modifier = Modifier.height(8.dp))
                             Row(
                                 modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
                                 horizontalArrangement = Arrangement.Start,
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                for (host in AIModelViewModel.recentServerHosts) {
+                                for ((kind, value) in AIModelViewModel.recentInputs) {
+                                    val title = when (kind) {
+                                        InputKind.SERVER -> "Server"
+                                        InputKind.API_KEY -> "API KEY"
+                                    }
+                                    val subtitle = when (kind) {
+                                        InputKind.SERVER -> value
+                                        InputKind.API_KEY -> value
+                                    }
                                     BlurredFluxCard(
-                                        onClick = { newHost = host },
+                                        onClick = {
+                                            if (kind == InputKind.SERVER) {
+                                                newHost = value
+                                                apiMode = false
+                                            } else {
+                                                apiKey = value
+                                                apiMode = true
+                                            }
+                                        },
                                         modifier = Modifier.padding(Dimen.LAYOUT_PADDING / 2).size(140.dp),
                                         iconModifier = Modifier.size(28.dp),
                                         iconResource = IconResource.Drawable(Res.drawable.sliders),
-                                        iconDescription = host,
+                                        iconDescription = title,
                                         hoverAnimation = HoverAnimation(0f, -20f),
                                         shape = MaterialTheme.shapes.large.copy(Dimen.BIG_BUTTON_CORNER_RADIUS),
                                         contentPadding = PaddingValues(Dimen.BIG_BUTTON_PADDING),
@@ -326,9 +417,9 @@ private fun ServerModelPopup(onDismiss: () -> Unit) {
                                         )
                                     ) {
                                         Spacer(modifier = Modifier.height(10.dp))
-                                        BodyText(host, fontSize = 13.sp)
+                                        BodyText(title, fontSize = 13.sp)
                                         Spacer(modifier = Modifier.height(2.dp))
-                                        CaptionText("클릭하여 선택", letterSpacing = (-1).sp, fontSize = 11.sp)
+                                        CaptionText(subtitle, letterSpacing = (-1).sp, fontSize = 11.sp)
                                     }
                                 }
                             }
@@ -349,7 +440,11 @@ private fun ServerModelPopup(onDismiss: () -> Unit) {
                             Spacer(modifier = Modifier.width(Dimen.LIST_ELEMENT_SPACING))
                             PrimaryFluxIconButton(
                                 onClick = {
-                                    if (newHost.isNotBlank()) AIModelViewModel.changeServerHost(newHost)
+                                    if (!apiMode) {
+                                        if (newHost.isNotBlank()) AIModelViewModel.changeServerHost(newHost)
+                                    } else {
+                                        if (apiKey.isNotBlank()) AIModelViewModel.addRecentApiKey(apiKey)
+                                    }
                                     onDismiss()
                                 },
                                 iconResource = IconResource.Drawable(Res.drawable.arrow_up),

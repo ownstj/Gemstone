@@ -11,19 +11,26 @@ val webSocketClient = ChatWebSocketClient()
 
 
 object AIModelViewModel {
+    enum class InputKind { SERVER, API_KEY }
+
     var isEditingServerHost by mutableStateOf(false)
     var serverHost by mutableStateOf(defaultServerHost)
         private set
 
-    var recentServerHosts by mutableStateOf(listOf(defaultServerHost))
+    // Unified recent inputs: latest first, no duplicates by (kind, value), max 8
+    var recentInputs by mutableStateOf(listOf(Pair(InputKind.SERVER, defaultServerHost)))
         private set
 
-    private fun addRecentServerHost(host: String) {
-        val sanitized = host.trim()
+    private fun addRecentEntry(kind: InputKind, value: String) {
+        val sanitized = value.trim()
         if (sanitized.isBlank()) return
-        val withoutDup = listOf(sanitized) + recentServerHosts.filter { it != sanitized }
-        recentServerHosts = withoutDup.take(8)
+        val withoutDup = listOf(kind to sanitized) + recentInputs.filter { it.first != kind || it.second != sanitized }
+        recentInputs = withoutDup.take(8)
     }
+
+    // Backward-compatible helpers
+    private fun addRecentServerHost(host: String) = addRecentEntry(InputKind.SERVER, host)
+    fun addRecentApiKey(key: String) = addRecentEntry(InputKind.API_KEY, key)
 
     fun changeServerHost(newHost: String) {
         val host = newHost.trim()
