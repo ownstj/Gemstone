@@ -15,15 +15,26 @@ object AIModelViewModel {
     var serverHost by mutableStateOf(defaultServerHost)
         private set
 
+    var recentServerHosts by mutableStateOf(listOf(defaultServerHost))
+        private set
+
+    private fun addRecentServerHost(host: String) {
+        val sanitized = host.trim()
+        if (sanitized.isBlank()) return
+        val withoutDup = listOf(sanitized) + recentServerHosts.filter { it != sanitized }
+        recentServerHosts = withoutDup.take(8)
+    }
+
     fun changeServerHost(newHost: String) {
         val host = newHost.trim()
         if (host.isBlank()) return
+        addRecentServerHost(host)
+
         // Show the current applied server address under New Chat
         selectedAIModelDescription = host
 
         val isSame = host == serverHost
         if (!isSame) {
-            // Clean up existing session on the old server and switch host
             ChatViewModel.runBlocking {
                 webSocketClient.deleteSession()
             }

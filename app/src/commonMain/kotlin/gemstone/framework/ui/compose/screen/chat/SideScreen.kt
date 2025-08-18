@@ -5,7 +5,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.shape.CornerSize
 import androidx.compose.foundation.text.BasicTextField
-import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.MaterialTheme
@@ -35,6 +34,13 @@ import gemstone.app.generated.resources.sliders
 import gemstone.framework.ui.viewmodel.AIModelViewModel
 import gemstone.framework.ui.viewmodel.SettingsViewModel
 import org.jetbrains.compose.resources.stringResource
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.material3.ButtonColors
+import androidx.compose.ui.window.Popup
+import androidx.compose.ui.window.PopupProperties
 
 
 @Composable
@@ -107,69 +113,9 @@ fun SideScreen(
         }
 
         if (AIModelViewModel.isEditingServerHost) {
-            var newHost by remember { mutableStateOf(AIModelViewModel.serverHost) }
-            Row(
-                modifier = Modifier.fillMaxWidth().padding(horizontal = Dimen.LAYOUT_PADDING),
-                horizontalArrangement = Arrangement.spacedBy(Dimen.LIST_ELEMENT_SPACING),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                SecondaryFluxButton(
-                    onClick = {},
-                    modifier = Modifier.weight(1f),
-                    elevation = ButtonDefaults.buttonElevation(0.4.dp),
-                    clickAnimation = Dimen.SURFACE_CLICK_ANIMATION,
-                    hoverAnimation = null,
-                    interactionSource = remember { NoRippleInteractionSource() },
-                    enabled = false,
-                    shape = MaterialTheme.shapes.extraLarge,
-                    contentPadding = PaddingValues(horizontal = 12.dp)
-                ) {
-                    BasicTextField(
-                        value = newHost,
-                        onValueChange = { newHost = it },
-                        modifier = Modifier
-                            .weight(1f)
-                            .padding(vertical = 6.dp)
-                            .onKeyEvent {
-                                if (it.key == Key.Enter || it.key == Key.NumPadEnter) {
-                                    AIModelViewModel.changeServerHost(newHost)
-                                    AIModelViewModel.isEditingServerHost = false
-                                    true
-                                } else false
-                            },
-                        singleLine = true,
-                        textStyle = TextStyle(
-                            color = MaterialTheme.colorScheme.onSecondary,
-                            fontFamily = SuiteFontFamily
-                        ),
-                        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
-                        keyboardActions = KeyboardActions(onDone = {
-                            AIModelViewModel.changeServerHost(newHost)
-                            AIModelViewModel.isEditingServerHost = false
-                        }),
-                        decorationBox = { innerTextField ->
-                            if (newHost.isEmpty()) {
-                                Text(
-                                    text = "Enter server address",
-                                    style = TextStyle(color = Color.Gray),
-                                    fontFamily = SuiteFontFamily
-                                )
-                            }
-                            innerTextField()
-                        }
-                    )
-                }
-                PrimaryFluxIconButton(
-                    onClick = {
-                        AIModelViewModel.changeServerHost(newHost)
-                        AIModelViewModel.isEditingServerHost = false
-                    },
-                    iconResource = IconResource.Drawable(Res.drawable.arrow_up),
-                    iconDescription = "Save",
-                    shape = MaterialTheme.shapes.extraLarge,
-                    modifier = Modifier.size(44.dp)
-                )
-            }
+            ServerModelPopup(
+                onDismiss = { AIModelViewModel.isEditingServerHost = false }
+            )
         }
 
         LazyRow(
@@ -266,6 +212,151 @@ fun SideScreen(
                                 )
                                 SubtitleText(value.second, fontSize = 16.sp, fontWeight = FontWeight.Normal)
                             }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun ServerModelPopup(onDismiss: () -> Unit) {
+    Popup(
+        onDismissRequest = onDismiss,
+        properties = PopupProperties(focusable = true)
+    ) {
+        Box(
+            modifier = Modifier.fillMaxSize()
+        ) {
+            Box(
+                modifier = Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.2f)).clickable { onDismiss() }
+            )
+
+            Box(
+                modifier = Modifier.fillMaxWidth().padding(horizontal = Dimen.LAYOUT_PADDING).align(Alignment.Center)
+            ) {
+                var newHost by remember { mutableStateOf(AIModelViewModel.serverHost) }
+
+                BlurredFluxButton(
+                    onClick = {},
+                    shape = MaterialTheme.shapes.large.copy(Dimen.BIG_BUTTON_CORNER_RADIUS),
+                    elevation = ButtonDefaults.buttonElevation(1.dp),
+                    colors = ButtonColors(
+                        containerColor = Color(0xFFFBFBFB),
+                        contentColor = MaterialTheme.colorScheme.onSurface,
+                        disabledContainerColor = Color(0xFFF9F9F9),
+                        disabledContentColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
+                    ),
+                    contentPadding = PaddingValues(Dimen.LAYOUT_PADDING)
+                ) {
+                    Column(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalArrangement = Arrangement.spacedBy(Dimen.LIST_ELEMENT_SPACING)
+                    ) {
+                        TitleText("서버 설정", fontSize = 20.sp)
+
+                        SecondaryFluxButton(
+                            onClick = {},
+                            modifier = Modifier.fillMaxWidth(),
+                            elevation = ButtonDefaults.buttonElevation(0.4.dp),
+                            clickAnimation = Dimen.SURFACE_CLICK_ANIMATION,
+                            hoverAnimation = null,
+                            interactionSource = remember { NoRippleInteractionSource() },
+                            enabled = false,
+                            shape = MaterialTheme.shapes.extraLarge,
+                            contentPadding = PaddingValues(horizontal = 12.dp)
+                        ) {
+                            BasicTextField(
+                                value = newHost,
+                                onValueChange = { newHost = it },
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .padding(vertical = 6.dp)
+                                    .onKeyEvent {
+                                        if (it.key == Key.Enter || it.key == Key.NumPadEnter) {
+                                            if (newHost.isNotBlank()) AIModelViewModel.changeServerHost(newHost)
+                                            onDismiss()
+                                            true
+                                        } else false
+                                    },
+                                singleLine = true,
+                                textStyle = TextStyle(
+                                    color = MaterialTheme.colorScheme.onSecondary,
+                                    fontFamily = SuiteFontFamily
+                                ),
+                                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                                decorationBox = { innerTextField ->
+                                    if (newHost.isEmpty()) {
+                                        Text(
+                                            text = "Enter server address",
+                                            style = TextStyle(color = Color.Gray),
+                                            fontFamily = SuiteFontFamily
+                                        )
+                                    }
+                                    innerTextField()
+                                }
+                            )
+                        }
+
+                        Column {
+                            CaptionText("최근 서버 주소", color = Color.Gray)
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Row(
+                                modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+                                horizontalArrangement = Arrangement.Start,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                for (host in AIModelViewModel.recentServerHosts) {
+                                    BlurredFluxCard(
+                                        onClick = { newHost = host },
+                                        modifier = Modifier.padding(Dimen.LAYOUT_PADDING / 2).size(140.dp),
+                                        iconModifier = Modifier.size(28.dp),
+                                        iconResource = IconResource.Drawable(Res.drawable.sliders),
+                                        iconDescription = host,
+                                        hoverAnimation = HoverAnimation(0f, -20f),
+                                        shape = MaterialTheme.shapes.large.copy(Dimen.BIG_BUTTON_CORNER_RADIUS),
+                                        contentPadding = PaddingValues(Dimen.BIG_BUTTON_PADDING),
+                                        elevation = ButtonDefaults.buttonElevation(1.dp),
+                                        colors = ButtonColors(
+                                            containerColor = Color(0xFFFBFBFB),
+                                            contentColor = MaterialTheme.colorScheme.onSurface,
+                                            disabledContainerColor = Color(0xFFF9F9F9),
+                                            disabledContentColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
+                                        )
+                                    ) {
+                                        Spacer(modifier = Modifier.height(10.dp))
+                                        BodyText(host, fontSize = 13.sp)
+                                        Spacer(modifier = Modifier.height(2.dp))
+                                        CaptionText("클릭하여 선택", letterSpacing = (-1).sp, fontSize = 11.sp)
+                                    }
+                                }
+                            }
+                        }
+
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.End,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            SecondaryFluxButton(
+                                onClick = onDismiss,
+                                shape = MaterialTheme.shapes.large.copy(Dimen.BIG_BUTTON_CORNER_RADIUS),
+                                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 10.dp)
+                            ) {
+                                BodyText("취소")
+                            }
+                            Spacer(modifier = Modifier.width(Dimen.LIST_ELEMENT_SPACING))
+                            PrimaryFluxIconButton(
+                                onClick = {
+                                    if (newHost.isNotBlank()) AIModelViewModel.changeServerHost(newHost)
+                                    onDismiss()
+                                },
+                                iconResource = IconResource.Drawable(Res.drawable.arrow_up),
+                                iconDescription = "Save",
+                                shape = MaterialTheme.shapes.extraLarge,
+                                modifier = Modifier.size(44.dp)
+                            )
                         }
                     }
                 }
